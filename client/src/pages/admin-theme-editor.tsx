@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
@@ -7,12 +7,13 @@ import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-p
 import { Button } from '../components/ui/button'
 import {
   ArrowLeft, Save, Eye, GripVertical, Trash2, EyeOff, Plus, Smartphone,
-  Moon, Sun, Palette, ChevronRight, ChevronLeft,
+  Moon, Sun, Palette, ChevronRight, ChevronLeft, Upload, Loader2,
   X,
 } from 'lucide-react'
 import { componentLibrary, type ThemeComponent, type ComponentType, componentDefault } from '../lib/theme-components'
 import { cn } from '../lib/utils'
 import { toast } from 'sonner'
+import { useGoogleFonts } from '../hooks/useGoogleFonts'
 
 /* ─── Canvas Component Renderers ─── */
 
@@ -147,6 +148,51 @@ function VideoIcon({ className }: { className?: string }) {
   return <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9.75a2.25 2.25 0 002.25-2.25V7.5a2.25 2.25 0 00-2.25-2.25H4.5A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" /></svg>
 }
 
+/* ─── Inline Upload Button ─── */
+
+function InlineUploadButton({ accept, onUpload }: { accept: string; onUpload: (url: string) => void }) {
+  const [uploading, setUploading] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        body: formData,
+      })
+      if (!res.ok) throw new Error('Upload failed')
+      const data = await res.json()
+      onUpload(data.url)
+      toast.success('File uploaded')
+    } catch {
+      toast.error('Upload failed')
+    } finally {
+      setUploading(false)
+      if (inputRef.current) inputRef.current.value = ''
+    }
+  }
+
+  return (
+    <>
+      <input ref={inputRef} type="file" accept={accept} className="hidden" onChange={handleFile} />
+      <button
+        onClick={() => inputRef.current?.click()}
+        disabled={uploading}
+        className="h-8 w-8 flex items-center justify-center rounded border border-border/50 hover:bg-muted transition-colors shrink-0"
+        title="Upload file"
+      >
+        {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+      </button>
+    </>
+  )
+}
+
 /* ─── Properties Editor ─── */
 
 function PropertiesPanel({
@@ -226,6 +272,64 @@ function PropertiesPanel({
       )
     }
 
+    if (key === 'fontFamily') {
+      const fonts = [
+        { name: 'Serif', value: 'serif' },
+        { name: 'Sans Serif', value: 'sans-serif' },
+        { name: 'Playfair Display', value: '"Playfair Display", serif' },
+        { name: 'Great Vibes', value: '"Great Vibes", cursive' },
+        { name: 'Cormorant Garamond', value: '"Cormorant Garamond", serif' },
+        { name: 'Lora', value: 'Lora, serif' },
+        { name: 'Montserrat', value: 'Montserrat, sans-serif' },
+        { name: 'Poppins', value: 'Poppins, sans-serif' },
+        { name: 'Inter', value: 'Inter, sans-serif' },
+        { name: 'Dancing Script', value: '"Dancing Script", cursive' },
+        { name: 'Tangerine', value: 'Tangerine, cursive' },
+        { name: 'Alex Brush', value: '"Alex Brush", cursive' },
+        { name: 'Parisienne', value: 'Parisienne, cursive' },
+        { name: 'EB Garamond', value: '"EB Garamond", serif' },
+        { name: 'Merriweather', value: 'Merriweather, serif' },
+        { name: 'DM Serif Display', value: '"DM Serif Display", serif' },
+        { name: 'Karla', value: 'Karla, sans-serif' },
+        // Indian / Devanagari fonts
+        { name: 'Noto Sans Devanagari', value: '"Noto Sans Devanagari", sans-serif' },
+        { name: 'Noto Serif Devanagari', value: '"Noto Serif Devanagari", serif' },
+        { name: 'Hind', value: 'Hind, sans-serif' },
+        { name: 'Hind Siliguri', value: '"Hind Siliguri", sans-serif' },
+        { name: 'Tiro Devanagari Hindi', value: '"Tiro Devanagari Hindi", serif' },
+        { name: 'Tiro Gurmukhi', value: '"Tiro Gurmukhi", serif' },
+        { name: 'Tiro Bangla', value: '"Tiro Bangla", serif' },
+        { name: 'Mukta', value: 'Mukta, sans-serif' },
+        { name: 'Mukta Mahee', value: '"Mukta Mahee", sans-serif' },
+        { name: 'Mukta Vaani', value: '"Mukta Vaani", sans-serif' },
+        { name: 'Baloo 2', value: '"Baloo 2", sans-serif' },
+        { name: 'Baloo Bhai 2', value: '"Baloo Bhai 2", sans-serif' },
+        // Arabic / Urdu
+        { name: 'Noto Naskh Arabic', value: '"Noto Naskh Arabic", serif' },
+        { name: 'Amiri', value: 'Amiri, serif' },
+        // CJK / Chinese
+        { name: 'Noto Sans SC', value: '"Noto Sans SC", sans-serif' },
+        { name: 'Noto Serif SC', value: '"Noto Serif SC", serif' },
+      ]
+      return (
+        <div key={key} className="py-1.5">
+          <span className="text-xs text-muted-foreground block mb-1">{label}</span>
+          <select
+            value={value}
+            onChange={e => onUpdate({ ...props, [key]: e.target.value })}
+            className="w-full h-8 text-xs px-2 rounded border border-border/50 bg-transparent"
+            style={{ fontFamily: value }}
+          >
+            {fonts.map(f => (
+              <option key={f.value} value={f.value} style={{ fontFamily: f.value }}>
+                {f.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )
+    }
+
     if (key === 'alignment') {
       return (
         <div key={key} className="py-1.5">
@@ -243,6 +347,28 @@ function PropertiesPanel({
                 {align === 'left' ? '≡' : align === 'center' ? '≡' : '≡'}
               </button>
             ))}
+          </div>
+        </div>
+      )
+    }
+
+    if (key === 'url' || key === 'src' || key === 'image') {
+      const fileAccept = key === 'url' ? 'audio/*,video/*' : 'image/*'
+      return (
+        <div key={key} className="py-1.5">
+          <span className="text-xs text-muted-foreground block mb-1">{label}</span>
+          <div className="flex gap-1">
+            <input
+              type="text"
+              value={value || ''}
+              onChange={e => onUpdate({ ...props, [key]: e.target.value })}
+              placeholder={`https://...`}
+              className="flex-1 h-8 text-xs px-2 rounded border border-border/50 bg-transparent placeholder:text-muted-foreground/40"
+            />
+            <InlineUploadButton
+              accept={fileAccept}
+              onUpload={(url) => onUpdate({ ...props, [key]: url })}
+            />
           </div>
         </div>
       )
@@ -306,6 +432,10 @@ export function AdminThemeEditorPage() {
   const [isDirty, setIsDirty] = useState(false)
   const [leftPanel, setLeftPanel] = useState<'palette' | 'none'>('palette')
   const [rightPanel, setRightPanel] = useState<'properties' | 'none'>('properties')
+
+  // Load Google Fonts used in components
+  const fontFamilies = components.filter(c => c.props.fontFamily).map(c => c.props.fontFamily)
+  useGoogleFonts(fontFamilies)
 
   const { data: theme, isLoading } = useQuery<any>({
     queryKey: ['theme-editor', id],

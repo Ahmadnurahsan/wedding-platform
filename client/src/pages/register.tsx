@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { Heart, Mail, Lock, User, Eye, EyeOff, ArrowLeft } from 'lucide-react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Heart, Mail, Lock, User, Eye, EyeOff, ArrowLeft, Gift } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card'
@@ -9,6 +9,8 @@ import { api } from '../lib/api'
 import { toast } from 'sonner'
 
 export function RegisterPage() {
+  const [searchParams] = useSearchParams()
+  const refCode = searchParams.get('ref') || ''
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -30,7 +32,7 @@ export function RegisterPage() {
     setLoading(true)
     try {
       const res = await api.post<{ token: string; user: { id: string; email: string; name: string } }>(
-        '/auth/register', { email, password, name },
+        '/auth/register', { email, password, name, referralCode: refCode || undefined },
       )
       login(res.token, { ...res.user, role: 'user', createdAt: '' })
       toast.success('Akun berhasil dibuat!')
@@ -54,6 +56,11 @@ export function RegisterPage() {
           </div>
           <CardTitle className="font-serif text-xl">Buat Akun</CardTitle>
           <CardDescription>Gratis, gak perlu kartu kredit</CardDescription>
+          {refCode && (
+            <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs text-emerald-700 border border-emerald-200">
+              <Gift className="h-3 w-3" /> Kode referral: <strong>{refCode}</strong>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

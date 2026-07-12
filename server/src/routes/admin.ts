@@ -200,6 +200,7 @@ adminRouter.post('/themes', async (req, res: Response) => {
       category: z.string().default('Modern'),
       thumbnailUrl: z.string().nullable().optional(),
       isPremium: z.boolean().default(false),
+      price: z.number().min(0).default(50000),
       sectionsConfig: z.string().nullable().optional(),
       defaultColors: z.string().nullable().optional(),
     }).parse(req.body);
@@ -219,6 +220,7 @@ adminRouter.put('/themes/:id', async (req, res: Response) => {
       category: z.string().optional(),
       thumbnailUrl: z.string().nullable().optional(),
       isPremium: z.boolean().optional(),
+      price: z.number().min(0).optional(),
       isActive: z.boolean().optional(),
       sectionsConfig: z.string().nullable().optional(),
       defaultColors: z.string().nullable().optional(),
@@ -237,6 +239,299 @@ adminRouter.delete('/themes/:id', async (req, res: Response) => {
     await prisma.theme.delete({ where: { id: String(req.params.id) } });
     return res.json({ message: 'Theme deleted' });
   } catch {
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── Coupons ──
+adminRouter.get('/coupons', async (req, res: Response) => {
+  try {
+    const search = String(req.query.search || '');
+    const page = Math.max(1, parseInt(String(req.query.page)) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(String(req.query.limit)) || 20));
+    const skip = (page - 1) * limit;
+
+    const where = search ? { code: { contains: search } } : {};
+    const [coupons, total] = await Promise.all([
+      prisma.coupon.findMany({
+        where,
+        include: { user: { select: { id: true, name: true, email: true } }, theme: { select: { id: true, name: true } } },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.coupon.count({ where }),
+    ]);
+
+    return res.json({ coupons, total, page, limit, totalPages: Math.ceil(total / limit) });
+  } catch {
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+adminRouter.post('/coupons', async (req: AuthRequest, res: Response) => {
+  try {
+    const data = z.object({
+      code: z.string().min(1).toUpperCase(),
+      discountType: z.enum(['percentage', 'fixed']),
+      discountValue: z.number().positive(),
+      maxUses: z.number().int().min(0).default(0),
+      minAmount: z.number().min(0).default(0),
+      userId: z.string().nullable().optional(),
+      themeId: z.string().nullable().optional(),
+      startsAt: z.string().nullable().optional(),
+      expiresAt: z.string().nullable().optional(),
+    }).parse(req.body);
+
+    const coupon = await prisma.coupon.create({
+      data: {
+        ...data,
+        startsAt: data.startsAt ? new Date(data.startsAt) : null,
+        expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
+      },
+    });
+    return res.status(201).json(coupon);
+  } catch (err) {
+    if (err instanceof z.ZodError) return res.status(400).json({ error: err.errors });
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+adminRouter.put('/coupons/:id', async (req: AuthRequest, res: Response) => {
+  try {
+    const data = z.object({
+      code: z.string().min(1).toUpperCase().optional(),
+      discountType: z.enum(['percentage', 'fixed']).optional(),
+      discountValue: z.number().positive().optional(),
+      maxUses: z.number().int().min(0).optional(),
+      minAmount: z.number().min(0).optional(),
+      userId: z.string().nullable().optional(),
+      themeId: z.string().nullable().optional(),
+      isActive: z.boolean().optional(),
+      startsAt: z.string().nullable().optional(),
+      expiresAt: z.string().nullable().optional(),
+    }).parse(req.body);
+
+    const updateData: any = { ...data };
+    if (data.startsAt !== undefined) updateData.startsAt = data.startsAt ? new Date(data.startsAt) : null;
+    if (data.expiresAt !== undefined) updateData.expiresAt = data.expiresAt ? new Date(data.expiresAt) : null;
+
+    const coupon = await prisma.coupon.update({ where: { id: String(req.params.id) }, data: updateData });
+    return res.json(coupon);
+  } catch (err) {
+    if (err instanceof z.ZodError) return res.status(400).json({ error: err.errors });
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+adminRouter.delete('/coupons/:id', async (req: AuthRequest, res: Response) => {
+  try {
+    await prisma.coupon.delete({ where: { id: String(req.params.id) } });
+    return res.json({ message: 'Coupon deleted' });
+  } catch {
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── Settings ──
+adminRouter.get('/settings', async (_req: AuthRequest, res: Response) => {
+  try {
+    const settings = await prisma.setting.findMany();
+    const result: Record<string, string> = {};
+    settings.forEach(s => { result[s.key] = s.value; });
+    return res.json(result);
+  } catch {
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+adminRouter.put('/settings', async (req: AuthRequest, res: Response) => {
+  try {
+    const data = z.record(z.string(), z.string()).parse(req.body);
+    const ops = Object.entries(data).map(([key, value]) =>
+      prisma.setting.upsert({ where: { key }, update: { value }, create: { key, value } })
+    );
+    await Promise.all(ops);
+    return res.json({ message: 'Settings updated' });
+  } catch (err) {
+    if (err instanceof z.ZodError) return res.status(400).json({ error: err.errors });
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── Apply Coupon (user-facing but admin can test) ──
+adminRouter.post('/coupons/validate', async (req: AuthRequest, res: Response) => {
+  try {
+    const { code, amount, themeId, userId } = z.object({
+      code: z.string(),
+      amount: z.number().default(0),
+      themeId: z.string().optional(),
+      userId: z.string().optional(),
+    }).parse(req.body);
+
+    const coupon = await prisma.coupon.findUnique({ where: { code: code.toUpperCase() } });
+    if (!coupon) return res.status(404).json({ error: 'Kode kupon tidak ditemukan' });
+    if (!coupon.isActive) return res.status(400).json({ error: 'Kupon sudah tidak aktif' });
+    if (coupon.expiresAt && coupon.expiresAt < new Date()) return res.status(400).json({ error: 'Kupon sudah kadaluarsa' });
+    if (coupon.startsAt && coupon.startsAt > new Date()) return res.status(400).json({ error: 'Kupon belum berlaku' });
+    if (coupon.maxUses > 0 && coupon.usedCount >= coupon.maxUses) return res.status(400).json({ error: 'Kuota kupon habis' });
+    if (coupon.userId && coupon.userId !== userId) return res.status(400).json({ error: 'Kupon tidak berlaku untuk akun ini' });
+    if (coupon.themeId && coupon.themeId !== themeId) return res.status(400).json({ error: 'Kupon tidak berlaku untuk tema ini' });
+    const minAmount = coupon.minAmount ?? 0;
+    if (amount < minAmount) return res.status(400).json({ error: `Minimal pembelian Rp${minAmount.toLocaleString('id-ID')}` });
+
+    let discountAmount = coupon.discountType === 'percentage' ? (amount * coupon.discountValue) / 100 : coupon.discountValue;
+    if (discountAmount > amount) discountAmount = amount;
+
+    return res.json({
+      valid: true,
+      coupon: {
+        code: coupon.code,
+        discountType: coupon.discountType,
+        discountValue: coupon.discountValue,
+        discountAmount: Math.round(discountAmount),
+      },
+    });
+  } catch (err) {
+    if (err instanceof z.ZodError) return res.status(400).json({ error: err.errors });
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── Admin Credit Management ──
+adminRouter.get('/credits', async (_req: AuthRequest, res: Response) => {
+  try {
+    const credits = await prisma.credit.findMany({
+      include: { user: { select: { id: true, name: true, email: true } } },
+      orderBy: { balance: 'desc' },
+    });
+    return res.json(credits);
+  } catch {
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+adminRouter.get('/credits/transactions', async (req: AuthRequest, res: Response) => {
+  try {
+    const page = Math.max(1, parseInt(String(req.query.page)) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(String(req.query.limit)) || 20));
+    const skip = (page - 1) * limit;
+    const userId = String(req.query.userId || '');
+
+    const where = userId ? { userId } : {};
+
+    const [transactions, total] = await Promise.all([
+      prisma.transaction.findMany({
+        where,
+        include: { user: { select: { id: true, name: true, email: true } } },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.transaction.count({ where }),
+    ]);
+
+    return res.json({ transactions, total, page, limit, totalPages: Math.ceil(total / limit) });
+  } catch {
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── Admin Affiliates ──
+adminRouter.get('/affiliates', async (_req: AuthRequest, res: Response) => {
+  try {
+    const affiliates = await prisma.affiliate.findMany({
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        _count: { select: { commissions: true } },
+      },
+      orderBy: { totalEarned: 'desc' },
+    });
+    const result = await Promise.all(affiliates.map(async (aff) => {
+      const referredUsers = await prisma.user.count({ where: { referredBy: aff.referralCode } });
+      return { ...aff, referredUsers };
+    }));
+    return res.json(result);
+  } catch {
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+adminRouter.get('/affiliates/commissions', async (req: AuthRequest, res: Response) => {
+  try {
+    const status = String(req.query.status || '');
+    const where = status ? { status } : {};
+    const commissions = await prisma.affiliateCommission.findMany({
+      where,
+      include: {
+        affiliate: { include: { user: { select: { id: true, name: true, email: true } } } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    });
+    return res.json(commissions);
+  } catch {
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+adminRouter.put('/affiliates/:id/rate', async (req: AuthRequest, res: Response) => {
+  try {
+    const { commissionRate } = z.object({ commissionRate: z.number().min(0).max(100) }).parse(req.body);
+    const aff = await prisma.affiliate.update({
+      where: { id: String(req.params.id) },
+      data: { commissionRate },
+    });
+    return res.json(aff);
+  } catch (err) {
+    if (err instanceof z.ZodError) return res.status(400).json({ error: err.errors });
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+adminRouter.put('/affiliates/commissions/:id/pay', async (req: AuthRequest, res: Response) => {
+  try {
+    const comm = await prisma.affiliateCommission.findUnique({ where: { id: String(req.params.id) } });
+    if (!comm) return res.status(404).json({ error: 'Commission not found' });
+    if (comm.status === 'paid') return res.status(400).json({ error: 'Already paid' });
+
+    await prisma.$transaction([
+      prisma.affiliateCommission.update({ where: { id: comm.id }, data: { status: 'paid' } }),
+      prisma.affiliate.update({ where: { id: comm.affiliateId }, data: { totalPaid: { increment: comm.amount } } }),
+    ]);
+
+    return res.json({ success: true });
+  } catch {
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+adminRouter.post('/credits/give', async (req: AuthRequest, res: Response) => {
+  try {
+    const { userId, amount, description } = z.object({
+      userId: z.string(),
+      amount: z.number().int().positive(),
+      description: z.string().default('Top up dari admin'),
+    }).parse(req.body);
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    await prisma.$transaction([
+      prisma.credit.upsert({
+        where: { userId },
+        update: { balance: { increment: amount } },
+        create: { userId, balance: amount },
+      }),
+      prisma.transaction.create({
+        data: { userId, type: 'admin', amount, description: `Admin: ${description}`, referenceId: req.userId },
+      }),
+    ]);
+
+    const credit = await prisma.credit.findUnique({ where: { userId } });
+    return res.json({ success: true, balance: credit?.balance || amount, amount });
+  } catch (err) {
+    if (err instanceof z.ZodError) return res.status(400).json({ error: err.errors });
     return res.status(500).json({ error: 'Internal server error' });
   }
 });

@@ -4,6 +4,17 @@ import { prisma } from '../lib/prisma';
 
 export const publicRouter = Router();
 
+publicRouter.get('/settings', async (_req, res: Response) => {
+  try {
+    const settings = await prisma.setting.findMany();
+    const result: Record<string, string> = {};
+    settings.forEach(s => { result[s.key] = s.value; });
+    return res.json(result);
+  } catch {
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 publicRouter.get('/:slug', async (req, res: Response) => {
   try {
     const invitation = await prisma.invitation.findUnique({

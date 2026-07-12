@@ -84,7 +84,7 @@ export function Layout() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Mobile Header */}
-        <header className="lg:hidden sticky top-0 z-40 border-b border-border/50 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
+        <header className="lg:hidden sticky top-0 z-40 border-b border-border/50 bg-background">
           <div className="flex items-center gap-3 px-4 py-3">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -112,10 +112,10 @@ export function Layout() {
         {mobileMenuOpen && (
           <>
             <div
-              className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm lg:hidden"
+              className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm lg:hidden"
               onClick={() => setMobileMenuOpen(false)}
             />
-            <div className="fixed left-0 top-0 z-50 h-full w-72 max-w-[80vw] border-r border-border/50 bg-background shadow-2xl lg:hidden slide-in-from-left">
+            <div className="fixed left-0 top-0 z-[60] h-full w-72 max-w-[80vw] border-r border-border/50 bg-background shadow-2xl lg:hidden slide-in-from-left">
               <div className="flex items-center justify-between px-4 py-4 border-b border-border/50">
                 <span className="font-serif font-bold text-lg">Menu</span>
                 <button
@@ -181,7 +181,7 @@ export function Layout() {
         </main>
 
         {/* Mobile Bottom Nav */}
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border/50 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border/50 bg-background">
           <div className="mx-auto flex max-w-md items-center justify-around py-1">
             {navItems.map(({ to, icon: Icon, label, auth, exact, admin }) => {
               if (auth && !user) return null
