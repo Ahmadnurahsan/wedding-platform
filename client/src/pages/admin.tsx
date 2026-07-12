@@ -1,6 +1,6 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { Users, FileText, TrendingUp, Gift, Calendar, Crown, ArrowLeft, Plus, Palette, Search, Trash2, Eye, X, Check, Shield, Star, Loader2 } from 'lucide-react'
+import { Users, FileText, TrendingUp, Gift, Calendar, Crown, ArrowLeft, Plus, Palette, Search, Trash2, Eye, X, Check, Shield, Star, Loader2, LayoutDashboard } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
@@ -378,6 +378,11 @@ export function AdminPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
+                    <Link to={`/admin/themes/editor/${theme.id}`}>
+                      <Button variant="ghost" size="icon-sm" className="h-7 w-7" title="Design Editor">
+                        <LayoutDashboard className="h-3.5 w-3.5" />
+                      </Button>
+                    </Link>
                     <Button variant="ghost" size="icon-sm" className="h-7 w-7"
                       onClick={() => togglePremiumMutation.mutate({ id: theme.id, isPremium: !theme.isPremium })}>
                       <Star className={`h-3.5 w-3.5 ${theme.isPremium ? 'fill-amber-400 text-amber-400' : ''}`} />

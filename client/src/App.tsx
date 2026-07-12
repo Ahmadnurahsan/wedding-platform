@@ -11,6 +11,7 @@ import { ProfilePage } from './pages/profile'
 import { PublicInvitationPage } from './pages/public-invitation'
 import { GuestsPage } from './pages/guests'
 import { AdminPage } from './pages/admin'
+import { AdminThemeEditorPage } from './pages/admin-theme-editor'
 import { TemplateDemoPage } from './pages/template-demo'
 
 export default function App() {
@@ -28,6 +29,7 @@ export default function App() {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/admin" element={<AdminPage />} />
         </Route>
+        <Route path="/admin/themes/editor/:id" element={<AdminThemeEditorPage />} />
         <Route path="/template-demo/:id" element={<TemplateDemoPage />} />
         <Route path="/inv/:slug" element={<PublicInvitationPage />} />
       </Routes>
