@@ -1,0 +1,580 @@
+{
+  "info": {
+    "name": "Wedding Platform API",
+    "description": "API collection for Wedding Platform — undangan digital\n\n## Auth\n- Register untuk dapat token\n- Setelah register/login, copy token dan set sebagai `token` variable di Collection\n\n## Variables\n- `base_url`: http://localhost:3001/api\n- `token`: (isi setelah login)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "opencode"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3001/api"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "invitation_id",
+      "value": ""
+    },
+    {
+      "key": "slug",
+      "value": ""
+    },
+    {
+      "key": "guest_id",
+      "value": ""
+    },
+    {
+      "key": "guest_code",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Check Health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is ok', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.response.to.have.jsonBody('status', 'ok');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Register success', () => {",
+                  "  pm.response.to.have.status(201);",
+                  "  const json = pm.response.json();",
+                  "  pm.collectionVariables.set('token', json.token);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\",\n  \"name\": \"User Demo\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Login success', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  const json = pm.response.json();",
+                  "  pm.collectionVariables.set('token', json.token);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Get Me",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Get user profile', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.response.to.have.jsonBody('email');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "me"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Invitations",
+      "item": [
+        {
+          "name": "List Invitations",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/invitations",
+              "host": ["{{base_url}}"],
+              "path": ["invitations"]
+            }
+          }
+        },
+        {
+          "name": "Create Invitation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Create invitation', () => {",
+                  "  pm.response.to.have.status(201);",
+                  "  const json = pm.response.json();",
+                  "  pm.collectionVariables.set('invitation_id', json.id);",
+                  "  pm.collectionVariables.set('slug', json.slug);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"slug\": \"andi-siti\",\n  \"title\": \"Andi & Siti\",\n  \"themeId\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/invitations",
+              "host": ["{{base_url}}"],
+              "path": ["invitations"]
+            }
+          }
+        },
+        {
+          "name": "Get Invitation",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/invitations/{{invitation_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["invitations", "{{invitation_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Invitation",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Andi & Siti - Updated\",\n  \"groomName\": \"Andi Pratama\",\n  \"groomNickname\": \"Andi\",\n  \"brideName\": \"Siti Rahmawati\",\n  \"brideNickname\": \"Siti\",\n  \"primaryColor\": \"#D4A574\",\n  \"secondaryColor\": \"#F5E6D3\",\n  \"status\": \"published\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/invitations/{{invitation_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["invitations", "{{invitation_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Invitation",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/invitations/{{invitation_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["invitations", "{{invitation_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Stats",
+      "item": [
+        {
+          "name": "Get Invitation Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/stats/{{invitation_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["stats", "{{invitation_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Increment Visit",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/stats/{{invitation_id}}/visit",
+              "host": ["{{base_url}}"],
+              "path": ["stats", "{{invitation_id}}", "visit"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Guests",
+      "item": [
+        {
+          "name": "List Guests",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/guests/{{invitation_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["guests", "{{invitation_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Add Guest",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Add guest', () => {",
+                  "  pm.response.to.have.status(201);",
+                  "  const json = pm.response.json();",
+                  "  pm.collectionVariables.set('guest_id', json.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Budi Santoso\",\n  \"phone\": \"08123456789\",\n  \"whatsapp\": \"08123456789\",\n  \"isVip\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/guests/{{invitation_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["guests", "{{invitation_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Bulk Import Guests",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"guests\": [\n    { \"name\": \"Ahmad Fauzi\" },\n    { \"name\": \"Dewi Lestari\", \"whatsapp\": \"081555777\" },\n    { \"name\": \"Rudi Hermawan\", \"phone\": \"081111222333\", \"isVip\": true }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/guests/{{invitation_id}}/bulk",
+              "host": ["{{base_url}}"],
+              "path": ["guests", "{{invitation_id}}", "bulk"]
+            }
+          }
+        },
+        {
+          "name": "Scan Guest (Check-in)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/guests/{{invitation_id}}/{{guest_id}}/scan",
+              "host": ["{{base_url}}"],
+              "path": ["guests", "{{invitation_id}}", "{{guest_id}}", "scan"]
+            }
+          }
+        },
+        {
+          "name": "Update RSVP",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rsvpStatus\": \"attending\",\n  \"rsvpCount\": 2\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/guests/{{invitation_id}}/{{guest_id}}/rsvp",
+              "host": ["{{base_url}}"],
+              "path": ["guests", "{{invitation_id}}", "{{guest_id}}", "rsvp"]
+            }
+          }
+        },
+        {
+          "name": "Delete Guest",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/guests/{{invitation_id}}/{{guest_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["guests", "{{invitation_id}}", "{{guest_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Public",
+      "item": [
+        {
+          "name": "Get Invitation by Slug",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Get public invitation', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  const json = pm.response.json();",
+                  "  pm.collectionVariables.set('guest_code', json.guests?.[0]?.uniqueCode || 'test');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/public/{{slug}}",
+              "host": ["{{base_url}}"],
+              "path": ["public", "{{slug}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Guest by Code",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/public/{{slug}}/guest/{{guest_code}}",
+              "host": ["{{base_url}}"],
+              "path": ["public", "{{slug}}", "guest", "{{guest_code}}"]
+            }
+          }
+        },
+        {
+          "name": "Submit RSVP",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Budi Santoso\",\n  \"phone\": \"08123456789\",\n  \"rsvpStatus\": \"attending\",\n  \"rsvpCount\": 2,\n  \"rsvpNote\": \"Akan hadir berdua\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/public/{{slug}}/rsvp",
+              "host": ["{{base_url}}"],
+              "path": ["public", "{{slug}}", "rsvp"]
+            }
+          }
+        },
+        {
+          "name": "Submit Wish",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Rina\",\n  \"message\": \"Selamat menempuh hidup baru, semoga langgeng selalu!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/public/{{slug}}/wishes",
+              "host": ["{{base_url}}"],
+              "path": ["public", "{{slug}}", "wishes"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Get Admin Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/stats",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "stats"]
+            }
+          }
+        },
+        {
+          "name": "List All Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/users",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "users"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Upload",
+      "item": [
+        {
+          "name": "Upload Single File",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "",
+                  "description": "Select an image/audio file (max 10MB)"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/upload",
+              "host": ["{{base_url}}"],
+              "path": ["upload"]
+            }
+          }
+        },
+        {
+          "name": "Upload Multiple Files",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": [],
+                  "description": "Select multiple files (max 10)"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/upload/multiple",
+              "host": ["{{base_url}}"],
+              "path": ["upload", "multiple"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,166 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String       @id @default(uuid())
+  email        String       @unique
+  passwordHash String       @map("password_hash")
+  name         String
+  phone        String?
+  role         String       @default("user")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+  invitations  Invitation[]
+
+  @@map("users")
+}
+
+model Invitation {
+  id              String             @id @default(uuid())
+  userId          String             @map("user_id")
+  slug            String             @unique
+  title           String?
+  status          String             @default("draft")
+  themeId         String?            @map("theme_id")
+  customDomain    String?            @map("custom_domain")
+  groomName       String?            @map("groom_name")
+  groomNickname   String?            @map("groom_nickname")
+  groomParent     String?            @map("groom_parent")
+  brideName       String?            @map("bride_name")
+  brideNickname   String?            @map("bride_nickname")
+  brideParent     String?            @map("bride_parent")
+  primaryColor    String             @default("#D4A574") @map("primary_color")
+  secondaryColor  String             @default("#F5E6D3") @map("secondary_color")
+  fontFamily      String             @default("serif") @map("font_family")
+  backgroundMusic String?            @map("background_music")
+  coverEnabled    Boolean            @default(true) @map("cover_enabled")
+  coverMessage    String?            @map("cover_message")
+  visitCount      Int                @default(0) @map("visit_count")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+  publishedAt     DateTime?          @map("published_at")
+  expiresAt       DateTime?          @map("expires_at")
+  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  theme           Theme?             @relation(fields: [themeId], references: [id])
+  events          Event[]
+  sections        InvitationSection[]
+  guests          Guest[]
+  wishes          Wish[]
+  gifts           Gift[]
+  media           Media[]
+
+  @@map("invitations")
+}
+
+model Theme {
+  id             String         @id @default(uuid())
+  name           String
+  category       String         @default("wedding")
+  thumbnailUrl   String?        @map("thumbnail_url")
+  isPremium      Boolean        @default(false) @map("is_premium")
+  sectionsConfig String?        @map("sections_config")
+  defaultColors  String?        @map("default_colors")
+  isActive       Boolean        @default(true) @map("is_active")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  invitations    Invitation[]
+
+  @@map("themes")
+}
+
+model Event {
+  id             String     @id @default(uuid())
+  invitationId   String     @map("invitation_id")
+  title          String
+  date           String?
+  timeStart      String?    @map("time_start")
+  timeEnd        String?    @map("time_end")
+  locationName   String?    @map("location_name")
+  address        String?
+  mapsUrl        String?    @map("maps_url")
+  latitude       Float?
+  longitude      Float?
+  orderIndex     Int        @default(0) @map("order_index")
+  invitation     Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+
+  @@map("events")
+}
+
+model InvitationSection {
+  id             String     @id @default(uuid())
+  invitationId   String     @map("invitation_id")
+  sectionKey     String     @map("section_key")
+  isVisible      Boolean    @default(true) @map("is_visible")
+  orderIndex     Int        @default(0) @map("order_index")
+  customContent  String?    @map("custom_content")
+  invitation     Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+
+  @@map("invitation_sections")
+}
+
+model Guest {
+  id           String     @id @default(uuid())
+  invitationId String     @map("invitation_id")
+  name         String
+  phone        String?
+  whatsapp     String?
+  uniqueCode   String?    @unique @map("unique_code")
+  isVip        Boolean    @default(false) @map("is_vip")
+  rsvpStatus   String     @default("pending") @map("rsvp_status")
+  rsvpCount    Int        @default(1) @map("rsvp_count")
+  rsvpNote     String?    @map("rsvp_note")
+  scannedAt    DateTime?  @map("scanned_at")
+  viewedAt     DateTime?  @map("viewed_at")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  invitation   Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+
+  @@map("guests")
+}
+
+model Wish {
+  id           String     @id @default(uuid())
+  invitationId String     @map("invitation_id")
+  guestId      String?    @map("guest_id")
+  name         String
+  message      String
+  reply        String?
+  likes        Int        @default(0)
+  isApproved   Boolean    @default(false) @map("is_approved")
+  isVisible    Boolean    @default(true) @map("is_visible")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  invitation   Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+
+  @@map("wishes")
+}
+
+model Gift {
+  id           String     @id @default(uuid())
+  invitationId String     @map("invitation_id")
+  guestName    String?    @map("guest_name")
+  bankName     String?    @map("bank_name")
+  amount       Float?
+  message      String?
+  isConfirmed  Boolean    @default(false) @map("is_confirmed")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  invitation   Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+
+  @@map("gifts")
+}
+
+model Media {
+  id           String     @id @default(uuid())
+  invitationId String     @map("invitation_id")
+  type         String     @default("image")
+  url          String
+  caption      String?
+  orderIndex   Int        @default(0) @map("order_index")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  invitation   Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+
+  @@map("media")
+}

@@ -1,0 +1,20 @@
+{
+  "name": "wedding-platform",
+  "private": true,
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "esbuild",
+      "prisma"
+    ]
+  },
+  "scripts": {
+    "dev": "concurrently -n client,server -c cyan,green \"pnpm --filter client dev\" \"pnpm --filter server dev\"",
+    "build": "pnpm --filter client build && pnpm --filter server build",
+    "lint": "pnpm --filter client lint && pnpm --filter server lint"
+  },
+  "dependencies": {
+    "concurrently": "^10.0.3"
+  }
+}
