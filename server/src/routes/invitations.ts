@@ -33,16 +33,59 @@ invitationsRouter.post('/', async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: 'Slug already taken' });
     }
 
+    const defaultSections = ['hero', 'couple', 'events', 'gallery', 'rsvp', 'maps', 'wishes', 'gift', 'footer'];
+
     const invitation = await prisma.invitation.create({
       data: {
         userId: req.userId!,
         slug,
         title,
         themeId,
+        sections: themeId
+          ? undefined
+          : {
+              create: defaultSections.map((key, i) => ({
+                sectionKey: key,
+                isVisible: true,
+                orderIndex: i,
+              })),
+            },
       },
+      include: { sections: true },
     });
 
-    return res.status(201).json(invitation);
+    // If themeId is set, create sections from theme config
+    if (themeId) {
+      const theme = await prisma.theme.findUnique({ where: { id: themeId } });
+      if (theme?.sectionsConfig) {
+        const keys: string[] = JSON.parse(theme.sectionsConfig);
+        await prisma.invitationSection.createMany({
+          data: keys.map((key, i) => ({
+            invitationId: invitation.id,
+            sectionKey: key,
+            isVisible: true,
+            orderIndex: i,
+          })),
+        });
+      } else {
+        await prisma.invitationSection.createMany({
+          data: defaultSections.map((key, i) => ({
+            invitationId: invitation.id,
+            sectionKey: key,
+            isVisible: true,
+            orderIndex: i,
+          })),
+        });
+      }
+    }
+
+    // Refetch with sections
+    const created = await prisma.invitation.findUnique({
+      where: { id: invitation.id },
+      include: { sections: { orderBy: { orderIndex: 'asc' } } },
+    });
+
+    return res.status(201).json(created);
   } catch (err) {
     if (err instanceof z.ZodError) {
       return res.status(400).json({ error: err.errors });
@@ -69,6 +112,32 @@ invitationsRouter.get('/:id', async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: 'Invitation not found' });
     }
 
+    // Auto-create default sections if empty (backward compat)
+    if (invitation.sections.length === 0) {
+      const defaultSections = ['hero', 'couple', 'events', 'gallery', 'rsvp', 'maps', 'wishes', 'gift', 'footer'];
+      await prisma.invitationSection.createMany({
+        data: defaultSections.map((key, i) => ({
+          invitationId: invitation.id,
+          sectionKey: key,
+          isVisible: true,
+          orderIndex: i,
+        })),
+      });
+      // Refetch
+      const updated = await prisma.invitation.findFirst({
+        where: { id: String(req.params.id), userId: req.userId },
+        include: {
+          events: { orderBy: { orderIndex: 'asc' } },
+          sections: { orderBy: { orderIndex: 'asc' } },
+          guests: true,
+          wishes: { orderBy: { createdAt: 'desc' } },
+          gifts: true,
+          media: { orderBy: { orderIndex: 'asc' } },
+        },
+      });
+      return res.json(updated);
+    }
+
     return res.json(invitation);
   } catch {
     return res.status(500).json({ error: 'Internal server error' });
@@ -83,6 +152,25 @@ invitationsRouter.put('/:id', async (req: AuthRequest, res: Response) => {
 
     if (!invitation) {
       return res.status(404).json({ error: 'Invitation not found' });
+    }
+
+    // If themeId changed, recreate sections from new theme
+    if (req.body.themeId && req.body.themeId !== invitation.themeId) {
+      const theme = await prisma.theme.findUnique({ where: { id: req.body.themeId } });
+      if (theme?.sectionsConfig) {
+        const keys: string[] = JSON.parse(theme.sectionsConfig);
+        // Delete old sections
+        await prisma.invitationSection.deleteMany({ where: { invitationId: invitation.id } });
+        // Create new sections
+        await prisma.invitationSection.createMany({
+          data: keys.map((key, i) => ({
+            invitationId: invitation.id,
+            sectionKey: key,
+            isVisible: true,
+            orderIndex: i,
+          })),
+        });
+      }
     }
 
     const updated = await prisma.invitation.update({
@@ -189,6 +277,38 @@ invitationsRouter.delete('/:id/media/:mediaId', async (req: AuthRequest, res: Re
     await prisma.media.delete({ where: { id: String(req.params.mediaId) } });
     return res.json({ message: 'Deleted' });
   } catch {
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Reorder & toggle sections
+invitationsRouter.put('/:id/sections', async (req: AuthRequest, res: Response) => {
+  try {
+    const inv = await prisma.invitation.findFirst({
+      where: { id: String(req.params.id), userId: req.userId },
+    });
+    if (!inv) return res.status(404).json({ error: 'Invitation not found' });
+
+    const { sections } = z.object({
+      sections: z.array(z.object({
+        id: z.string(),
+        isVisible: z.boolean(),
+        orderIndex: z.number().int(),
+      })),
+    }).parse(req.body);
+
+    const updated = await Promise.all(
+      sections.map((s) =>
+        prisma.invitationSection.update({
+          where: { id: s.id },
+          data: { isVisible: s.isVisible, orderIndex: s.orderIndex },
+        })
+      )
+    );
+
+    return res.json(updated);
+  } catch (err) {
+    if (err instanceof z.ZodError) return res.status(400).json({ error: err.errors });
     return res.status(500).json({ error: 'Internal server error' });
   }
 });

@@ -1,17 +1,139 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { Save, ArrowLeft, Palette, Type, Music, Image, Globe, GlobeOff, Users, Trash2, MapPin, MessageCircle, Check, Heart, CornerDownLeft } from 'lucide-react'
+import { Save, ArrowLeft, Palette, Type, Music, Image, Globe, GlobeOff, Users, Trash2, MapPin, MessageCircle, Check, Heart, CornerDownLeft, Layout, EyeOff, Eye, GripVertical, Home, Heart as HeartIcon, Calendar, MapPin as MapPinIcon, Gift, MessageSquare, CheckCheck } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { Textarea } from '../components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { FileUpload } from '../components/file-upload'
 import { toast } from 'sonner'
+import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd'
+
+const sectionIcons: Record<string, React.ElementType> = {
+  hero: Home,
+  couple: HeartIcon,
+  events: Calendar,
+  gallery: Image,
+  rsvp: CheckCheck,
+  maps: MapPinIcon,
+  wishes: MessageSquare,
+  gift: Gift,
+  footer: HeartIcon,
+}
+
+const sectionLabels: Record<string, string> = {
+  hero: 'Hero / Sampul',
+  couple: 'Mempelai',
+  events: 'Acara',
+  gallery: 'Galeri Foto',
+  rsvp: 'RSVP',
+  maps: 'Lokasi',
+  wishes: 'Ucapan',
+  gift: 'Tanda Kasih',
+  footer: 'Footer',
+}
+
+function LayoutEditor({ sections, invitationId, queryClient }: {
+  sections: Invitation['sections']
+  invitationId: string
+  queryClient: any
+}) {
+  const [items, setItems] = useState([...sections].sort((a, b) => a.orderIndex - b.orderIndex))
+
+  useEffect(() => {
+    setItems([...sections].sort((a, b) => a.orderIndex - b.orderIndex))
+  }, [sections])
+
+  const onDragEnd = async (result: DropResult) => {
+    if (!result.destination) return
+    const reordered = [...items]
+    const [moved] = reordered.splice(result.source.index, 1)
+    reordered.splice(result.destination.index, 0, moved)
+    const updated = reordered.map((item, i) => ({ ...item, orderIndex: i }))
+    setItems(updated)
+
+    try {
+      await api.put(`/invitations/${invitationId}/sections`, {
+        sections: updated.map(s => ({ id: s.id, isVisible: s.isVisible, orderIndex: s.orderIndex })),
+      })
+      queryClient.invalidateQueries({ queryKey: ['invitation', invitationId] })
+      toast.success('Layout tersimpan')
+    } catch {
+      toast.error('Gagal menyimpan layout')
+    }
+  }
+
+  const toggleVisibility = async (id: string) => {
+    const updated = items.map(item =>
+      item.id === id ? { ...item, isVisible: !item.isVisible } : item
+    )
+    setItems(updated)
+
+    try {
+      await api.put(`/invitations/${invitationId}/sections`, {
+        sections: updated.map(s => ({ id: s.id, isVisible: s.isVisible, orderIndex: s.orderIndex })),
+      })
+      queryClient.invalidateQueries({ queryKey: ['invitation', invitationId] })
+      toast.success('Visibilitas diubah')
+    } catch {
+      toast.error('Gagal mengubah visibilitas')
+    }
+  }
+
+  return (
+    <DragDropContext onDragEnd={onDragEnd}>
+      <Droppable droppableId="sections">
+        {(provided) => (
+          <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
+            {items.map((section, index) => {
+              const Icon = sectionIcons[section.sectionKey] || Image
+              const label = sectionLabels[section.sectionKey] || section.sectionKey
+              return (
+                <Draggable key={section.id} draggableId={section.id} index={index}>
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      className={`flex items-center gap-3 rounded-xl border p-3 transition-all ${
+                        snapshot.isDragging ? 'shadow-lg border-primary/30 bg-background' : 'border-border/50 bg-background'
+                      } ${!section.isVisible ? 'opacity-50' : ''}`}
+                    >
+                      <span {...provided.dragHandleProps} className="text-muted-foreground cursor-grab active:cursor-grabbing">
+                        <GripVertical className="h-4 w-4" />
+                      </span>
+                      <Icon className="h-5 w-5 shrink-0 text-primary" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">{label}</p>
+                        <p className="text-xs text-muted-foreground">{section.sectionKey}</p>
+                      </div>
+                      <button
+                        onClick={() => toggleVisibility(section.id)}
+                        className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                          section.isVisible
+                            ? 'bg-primary/10 text-primary hover:bg-primary/20'
+                            : 'bg-muted text-muted-foreground hover:bg-destructive/10 hover:text-destructive'
+                        }`}
+                      >
+                        {section.isVisible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                        {section.isVisible ? 'Visible' : 'Hidden'}
+                      </button>
+                    </div>
+                  )}
+                </Draggable>
+              )
+            })}
+            {provided.placeholder}
+          </div>
+        )}
+      </Droppable>
+    </DragDropContext>
+  )
+}
 
 interface Invitation {
   id: string
@@ -32,6 +154,7 @@ interface Invitation {
   coverMessage: string | null
   events: { id: string; title: string; date: string | null; timeStart: string | null; timeEnd: string | null; locationName: string | null; address: string | null; mapsUrl: string | null }[]
   media: { id: string; type: string; url: string; caption: string | null; orderIndex: number }[]
+  sections: { id: string; sectionKey: string; isVisible: boolean; orderIndex: number }[]
   wishes: { id: string; name: string; message: string; reply: string | null; likes: number; isApproved: boolean; createdAt: string }[]
 }
 
@@ -46,6 +169,7 @@ export function EditorPage() {
     enabled: !!id,
   })
 
+  const [activeTab, setActiveTab] = useState('content')
   const [form, setForm] = useState<Record<string, any>>({})
   const [eventsForm, setEventsForm] = useState<Record<string, any>>({})
 
@@ -138,19 +262,62 @@ export function EditorPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="content">
-        <div className="overflow-x-auto -mx-4 px-4">
-          <TabsList className="w-full">
-            <TabsTrigger value="content" className="flex-1 text-xs"><Type className="mr-1 h-3.5 w-3.5" /> Konten</TabsTrigger>
-            <TabsTrigger value="events" className="flex-1 text-xs"><Image className="mr-1 h-3.5 w-3.5" /> Acara</TabsTrigger>
-            <TabsTrigger value="gallery" className="flex-1 text-xs"><Image className="mr-1 h-3.5 w-3.5" /> Galeri</TabsTrigger>
-            <TabsTrigger value="style" className="flex-1 text-xs"><Palette className="mr-1 h-3.5 w-3.5" /> Tema</TabsTrigger>
-            <TabsTrigger value="music" className="flex-1 text-xs"><Music className="mr-1 h-3.5 w-3.5" /> Musik</TabsTrigger>
-            <TabsTrigger value="wishes" className="flex-1 text-xs"><MessageCircle className="mr-1 h-3.5 w-3.5" /> Ucapan</TabsTrigger>
-          </TabsList>
-        </div>
+      <div className="flex gap-6">
+        {/* Desktop sidebar */}
+        <nav className="hidden lg:flex flex-col gap-1 w-44 shrink-0 sticky top-24 self-start">
+          {[
+            { value: 'content', icon: Type, label: 'Konten' },
+            { value: 'events', icon: Image, label: 'Acara' },
+            { value: 'gallery', icon: Image, label: 'Galeri' },
+            { value: 'style', icon: Palette, label: 'Tema' },
+            { value: 'music', icon: Music, label: 'Musik' },
+            { value: 'layout', icon: Layout, label: 'Layout' },
+            { value: 'wishes', icon: MessageCircle, label: 'Ucapan' },
+          ].map(({ value, icon: Icon, label }) => (
+            <button
+              key={value}
+              onClick={() => setActiveTab(value)}
+              className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-all text-left ${
+                activeTab === value
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+              }`}
+            >
+              <Icon className="h-4 w-4" />
+              {label}
+            </button>
+          ))}
+        </nav>
 
-        <TabsContent value="content" className="space-y-4 mt-6">
+        <div className="flex-1 min-w-0">
+          {/* Mobile tabs */}
+          <div className="flex lg:hidden overflow-x-auto -mx-4 px-4 gap-1 pb-1">
+            {[
+              { value: 'content', icon: Type, label: 'Konten' },
+              { value: 'events', icon: Image, label: 'Acara' },
+              { value: 'gallery', icon: Image, label: 'Galeri' },
+              { value: 'style', icon: Palette, label: 'Tema' },
+              { value: 'music', icon: Music, label: 'Musik' },
+              { value: 'layout', icon: Layout, label: 'Layout' },
+              { value: 'wishes', icon: MessageCircle, label: 'Ucapan' },
+            ].map(({ value, icon: Icon, label }) => (
+              <button
+                key={value}
+                onClick={() => setActiveTab(value)}
+                className={`shrink-0 flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all whitespace-nowrap ${
+                  activeTab === value
+                    ? 'bg-primary/10 text-primary shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Tab content */}
+          {activeTab === 'content' && <div className="space-y-4 mt-6">
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Data Mempelai</CardTitle>
@@ -212,9 +379,9 @@ export function EditorPage() {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
+        </div>}
 
-        <TabsContent value="events" className="space-y-4 mt-6">
+        {activeTab === 'events' && <div className="space-y-4 mt-6">
           {invitation.events.length === 0 ? (
             <Card>
               <CardContent className="py-8 text-center">
@@ -304,9 +471,9 @@ export function EditorPage() {
               </Card>
             ))
           )}
-        </TabsContent>
+        </div>}
 
-        <TabsContent value="gallery" className="space-y-4 mt-6">
+        {activeTab === 'gallery' && <div className="space-y-4 mt-6">
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Foto & Video</CardTitle>
@@ -336,9 +503,9 @@ export function EditorPage() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
+        </div>}
 
-        <TabsContent value="style" className="space-y-4 mt-6">
+        {activeTab === 'style' && <div className="space-y-4 mt-6">
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Tema & Warna</CardTitle>
@@ -386,9 +553,9 @@ export function EditorPage() {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
+        </div>}
 
-        <TabsContent value="music" className="space-y-4 mt-6">
+        {activeTab === 'music' && <div className="space-y-4 mt-6">
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Musik Latar</CardTitle>
@@ -414,8 +581,26 @@ export function EditorPage() {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-        <TabsContent value="wishes" className="space-y-4 mt-6">
+        </div>}
+        {activeTab === 'layout' && <div className="space-y-4 mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Layout className="h-4 w-4 text-primary" /> Custom Layout
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">Seret untuk urutkan, klik untuk sembunyikan/tampilkan section</p>
+            </CardHeader>
+            <CardContent>
+              <LayoutEditor
+                sections={invitation.sections || []}
+                invitationId={id!}
+                queryClient={queryClient}
+              />
+            </CardContent>
+          </Card>
+        </div>}
+
+        {activeTab === 'wishes' && <div className="space-y-4 mt-6">
           <Card>
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
@@ -495,8 +680,9 @@ export function EditorPage() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+        </div>}
+      </div>
+    </div>
     </div>
   )
 }

@@ -218,11 +218,20 @@ export function AdminPage() {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin-invitations'] }); toast.success('Status toggled') },
   })
 
+  const [sidebarTab, setSidebarTab] = useState('overview')
+
   if (!user || user.role !== 'admin') return (
     <div className="flex h-40 items-center justify-center">
       <p className="text-sm text-muted-foreground">Akses terbatas untuk admin</p>
     </div>
   )
+
+  const sidebarItems = [
+    { value: 'overview', icon: Eye, label: 'Overview' },
+    { value: 'themes', icon: Palette, label: 'Themes' },
+    { value: 'users', icon: Users, label: 'Users' },
+    { value: 'invitations', icon: FileText, label: 'Undangan' },
+  ]
 
   return (
     <div className="space-y-6 pb-8">
@@ -238,15 +247,36 @@ export function AdminPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="overview">
-        <div className="overflow-x-auto -mx-4 px-4">
-          <TabsList className="w-full">
-            <TabsTrigger value="overview" className="flex-1 text-xs"><Eye className="mr-1 h-3.5 w-3.5" /> Overview</TabsTrigger>
-            <TabsTrigger value="themes" className="flex-1 text-xs"><Palette className="mr-1 h-3.5 w-3.5" /> Themes</TabsTrigger>
-            <TabsTrigger value="users" className="flex-1 text-xs"><Users className="mr-1 h-3.5 w-3.5" /> Users</TabsTrigger>
-            <TabsTrigger value="invitations" className="flex-1 text-xs"><FileText className="mr-1 h-3.5 w-3.5" /> Undangan</TabsTrigger>
-          </TabsList>
-        </div>
+      <div className="flex gap-6">
+        {/* Desktop sidebar */}
+        <nav className="hidden lg:flex flex-col gap-1 w-48 shrink-0 sticky top-20 self-start">
+          {sidebarItems.map(({ value, icon: Icon, label }) => (
+            <button
+              key={value}
+              onClick={() => setSidebarTab(value)}
+              className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-all text-left ${
+                sidebarTab === value
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+              }`}
+            >
+              <Icon className="h-4 w-4" />
+              {label}
+            </button>
+          ))}
+        </nav>
+
+        <div className="flex-1 min-w-0">
+          <Tabs value={sidebarTab} onValueChange={setSidebarTab}>
+            {/* Mobile tabs - hidden on desktop */}
+            <div className="lg:hidden overflow-x-auto -mx-4 px-4">
+              <TabsList className="w-full">
+                <TabsTrigger value="overview" className="flex-1 text-xs"><Eye className="mr-1 h-3.5 w-3.5" /> Overview</TabsTrigger>
+                <TabsTrigger value="themes" className="flex-1 text-xs"><Palette className="mr-1 h-3.5 w-3.5" /> Themes</TabsTrigger>
+                <TabsTrigger value="users" className="flex-1 text-xs"><Users className="mr-1 h-3.5 w-3.5" /> Users</TabsTrigger>
+                <TabsTrigger value="invitations" className="flex-1 text-xs"><FileText className="mr-1 h-3.5 w-3.5" /> Undangan</TabsTrigger>
+              </TabsList>
+            </div>
 
         {/* ── OVERVIEW ── */}
         <TabsContent value="overview" className="space-y-4 mt-6">
@@ -466,6 +496,8 @@ export function AdminPage() {
           )}
         </TabsContent>
       </Tabs>
+      </div>
+    </div>
     </div>
   )
 }

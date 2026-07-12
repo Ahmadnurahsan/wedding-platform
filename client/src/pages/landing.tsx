@@ -1,5 +1,6 @@
-import { Link } from 'react-router-dom'
-import { Heart, Check, ArrowRight, Star, Smartphone, Palette, Shield, Infinity, ChevronDown, Quote, Users, Music, Gift, Image as ImageIcon, ChevronUp, MessageCircle } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../hooks/useAuth'
+import { Heart, Check, ArrowRight, Star, Smartphone, Palette, Shield, Infinity, ChevronDown, Quote, Users, Music, Gift, Image as ImageIcon, ChevronUp, MessageCircle, Menu, X, Sparkles } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Card, CardContent } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
@@ -50,7 +51,10 @@ const iconMap: Record<string, any> = {
 }
 
 export function LandingPage() {
+  const { user } = useAuth()
+  const navigate = useNavigate()
   const [openFaq, setOpenFaq] = useState<number | null>(null)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
   const { data: themes } = useQuery<any[]>({
     queryKey: ['themes-landing'],
@@ -59,30 +63,124 @@ export function LandingPage() {
 
   return (
     <div className="min-h-dvh bg-background">
+      {/* ── PROMO BAR ── */}
+      <div className="relative z-50 bg-gradient-to-r from-primary/10 via-primary/20 to-primary/10 border-b border-primary/10">
+        <div className="mx-auto flex max-w-5xl items-center justify-center gap-2 px-4 py-2 text-xs sm:text-sm font-medium text-primary">
+          <Sparkles className="h-3.5 w-3.5 flex-shrink-0" />
+          <span className="hidden sm:inline">Promo Ramadhan — Diskon 50% untuk semua paket!</span>
+          <span className="sm:hidden">Promo Ramadhan — Diskon 50%!</span>
+          <Link to="/register" className="ml-1 underline underline-offset-2 font-semibold hover:text-primary/80 transition-colors">
+            Klaim Sekarang
+          </Link>
+        </div>
+      </div>
+
       {/* ── NAV ── */}
       <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10">
-              <Heart className="h-4 w-4 text-primary" />
-            </div>
-            <span className="font-serif font-bold text-lg tracking-tight">WeddingInvite</span>
-          </Link>
-          <div className="flex items-center gap-3">
-            <Link to="/templates" className="hidden sm:block text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setMobileNavOpen(!mobileNavOpen)}
+              className="flex sm:hidden h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
+            >
+              {mobileNavOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+            <Link to="/" className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/60 shadow-sm">
+                <Heart className="h-4 w-4 text-white" />
+              </div>
+              <span className="font-serif font-bold text-lg tracking-tight">WeddingInvite</span>
+            </Link>
+          </div>
+          {/* Desktop Nav */}
+          <div className="hidden sm:flex items-center gap-6">
+            <Link to="/templates" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Template
             </Link>
-            <Link to="/login">
-              <Button variant="ghost" size="sm" className="text-sm">Masuk</Button>
+            <Link to="/#features" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              Fitur
             </Link>
-            <Link to="/register">
-              <Button size="sm" className="text-sm shadow-sm">
-                <Heart className="mr-1 h-3.5 w-3.5" /> Buat Undangan
-              </Button>
+            <Link to="/#pricing" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              Harga
             </Link>
+            <Link to="/#faq" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              FAQ
+            </Link>
+            {user ? (
+              <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
+                <span className="hidden sm:inline">{user.name}</span>
+              </button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Link to="/login">
+                  <Button variant="ghost" size="sm" className="text-sm">Masuk</Button>
+                </Link>
+                <Link to="/register">
+                  <Button size="sm" className="text-sm shadow-sm">
+                    <Heart className="mr-1 h-3.5 w-3.5" /> Buat Undangan
+                  </Button>
+                </Link>
+              </div>
+            )}
+          </div>
+          {/* Mobile right */}
+          <div className="flex sm:hidden items-center gap-2">
+            {user ? (
+              <button onClick={() => navigate('/dashboard')} className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                {user.name.charAt(0).toUpperCase()}
+              </button>
+            ) : (
+              <Link to="/register">
+                <Button size="sm" className="text-xs shadow-sm px-3">
+                  <Heart className="mr-1 h-3 w-3" /> Buat
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </nav>
+
+      {/* Mobile Sheet (outside nav to avoid backdrop-filter fixed bug) */}
+      {mobileNavOpen && (
+        <>
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm sm:hidden" onClick={() => setMobileNavOpen(false)} />
+          <div className="fixed left-0 top-0 z-50 h-full w-72 max-w-[80vw] border-r border-border/50 bg-background shadow-2xl sm:hidden slide-in-from-left">
+            <div className="flex items-center justify-between px-4 py-4 border-b border-border/50">
+              <span className="font-serif font-bold text-lg">Menu</span>
+              <button
+                onClick={() => setMobileNavOpen(false)}
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <nav className="px-3 py-3 space-y-1">
+              <Link to="/templates" onClick={() => setMobileNavOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-all">
+                <Star className="h-4 w-4" /> Template
+              </Link>
+              <Link to="/#features" onClick={() => setMobileNavOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-all">
+                <Sparkles className="h-4 w-4" /> Fitur
+              </Link>
+              <Link to="/#pricing" onClick={() => setMobileNavOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-all">
+                <ArrowRight className="h-4 w-4" /> Harga
+              </Link>
+              <Link to="/#faq" onClick={() => setMobileNavOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-all">
+                <MessageCircle className="h-4 w-4" /> FAQ
+              </Link>
+            </nav>
+            <div className="absolute bottom-0 left-0 right-0 border-t border-border/50 p-4">
+              {!user && (
+                <Link to="/login" onClick={() => setMobileNavOpen(false)}>
+                  <Button variant="outline" className="w-full gap-2"><Heart className="h-4 w-4" /> Masuk</Button>
+                </Link>
+              )}
+            </div>
+          </div>
+        </>
+      )}
 
       {/* ── HERO ── */}
       <section className="relative overflow-hidden">
