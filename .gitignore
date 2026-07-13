@@ -6,3 +6,6 @@ dist/
 uploads/
 .DS_Store
 *.log
+
+# Track Cloudflare Pages functions uploads proxy (not the server uploads dir)
+!client/functions/uploads/

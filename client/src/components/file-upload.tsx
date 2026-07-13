@@ -14,23 +14,40 @@ export function FileUpload({ accept = 'image/*', multiple = false, onUpload, cla
   const [isDragOver, setIsDragOver] = useState(false)
   const [uploading, setUploading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const token = localStorage.getItem('token')
 
   const handleFiles = async (files: FileList) => {
     setUploading(true)
     try {
-      const urls: string[] = []
-      for (const file of Array.from(files)) {
+      let urls: string[] = []
+      const fileArray = Array.from(files)
+
+      if (fileArray.length > 1) {
         const formData = new FormData()
-        formData.append('file', file)
-        const res = await fetch('/api/upload', {
+        fileArray.forEach((f) => formData.append('files', f))
+        const res = await fetch('/api/upload/multiple', {
           method: 'POST',
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+          headers: { Authorization: `Bearer ${token}` },
           body: formData,
         })
-        if (!res.ok) throw new Error(`Upload failed: ${file.name}`)
+        if (!res.ok) throw new Error('Batch upload failed')
         const data = await res.json()
-        urls.push(data.url)
+        urls = data.files.map((f: any) => f.url)
+      } else {
+        for (const file of fileArray) {
+          const formData = new FormData()
+          formData.append('file', file)
+          const res = await fetch('/api/upload', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+            body: formData,
+          })
+          if (!res.ok) throw new Error(`Upload failed: ${file.name}`)
+          const data = await res.json()
+          urls.push(data.url)
+        }
       }
+
       onUpload(urls)
       toast.success(`${urls.length} file berhasil diupload`)
     } catch (err) {
@@ -74,7 +91,8 @@ export function FileUpload({ accept = 'image/*', multiple = false, onUpload, cla
           <Upload className="h-8 w-8 text-muted-foreground" />
           <p className="text-sm font-medium">Drop files here or click to browse</p>
           <p className="text-xs text-muted-foreground">
-            {accept === 'image/*' ? 'JPG, PNG, GIF, WebP' : 'MP3, WAV, OGG'} — Max 10MB
+            {accept === 'image/*' ? 'JPG, PNG, GIF, WebP — Max 10MB' : 'MP3, WAV, OGG — Max 10MB'}
+            {multiple && ' (batch)'}
           </p>
         </div>
       )}

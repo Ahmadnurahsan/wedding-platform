@@ -533,9 +533,12 @@ export function EditorPage() {
               <p className="text-xs text-muted-foreground">Upload foto prewedding atau momen spesial</p>
             </CardHeader>
             <CardContent className="space-y-4">
-              <FileUpload accept="image/*" multiple onUpload={() => {
+              <FileUpload accept="image/*" multiple onUpload={async (urls) => {
+                for (const url of urls) {
+                  try { await api.post(`/invitations/${id}/media`, { url, type: 'image' }) } catch {}
+                }
                 queryClient.invalidateQueries({ queryKey: ['invitation', id] })
-                toast.success('Foto diupload!')
+                toast.success(`${urls.length} foto ditambahkan!`)
               }} />
               {invitation.media.length > 0 && (
                 <div className="grid grid-cols-3 gap-2">

@@ -266,6 +266,31 @@ invitationsRouter.put('/:id/events', async (req: AuthRequest, res: Response) => 
   }
 });
 
+// Create media
+invitationsRouter.post('/:id/media', async (req: AuthRequest, res: Response) => {
+  try {
+    const inv = await prisma.invitation.findFirst({
+      where: { id: String(req.params.id), userId: req.userId },
+    });
+    if (!inv) return res.status(404).json({ error: 'Invitation not found' });
+
+    const { url, type, caption } = z.object({
+      url: z.string(),
+      type: z.string().optional(),
+      caption: z.string().optional(),
+    }).parse(req.body);
+
+    const count = await prisma.media.count({ where: { invitationId: inv.id } });
+    const media = await prisma.media.create({
+      data: { invitationId: inv.id, url, type: type || 'image', caption, orderIndex: count },
+    });
+    return res.json(media);
+  } catch (err) {
+    if (err instanceof z.ZodError) return res.status(400).json({ error: err.errors });
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Delete media
 invitationsRouter.delete('/:id/media/:mediaId', async (req: AuthRequest, res: Response) => {
   try {
