@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { Save, ArrowLeft, Palette, Type, Music, Image, Globe, GlobeOff, Users, Trash2, MapPin, MessageCircle, Check, Heart, CornerDownLeft, Layout, EyeOff, Eye, GripVertical, Home, Heart as HeartIcon, Calendar, MapPin as MapPinIcon, Gift, MessageSquare, CheckCheck } from 'lucide-react'
+import { Save, ArrowLeft, Palette, Type, Music, Image, Globe, GlobeOff, Users, Trash2, MapPin, MessageCircle, Check, Heart, CornerDownLeft, Layout, EyeOff, Eye, GripVertical, Home, Heart as HeartIcon, Calendar, MapPin as MapPinIcon, Gift, MessageSquare, CheckCheck, Wallet, ShoppingCart, Crown } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
@@ -140,6 +140,7 @@ interface Invitation {
   slug: string
   title: string | null
   status: string
+  themeId: string | null
   groomName: string | null
   groomNickname: string | null
   groomParent: string | null
@@ -207,6 +208,58 @@ export function EditorPage() {
       toast.success('Media dihapus')
     },
   })
+
+  const { data: themes } = useQuery<any[]>({
+    queryKey: ['themes'],
+    queryFn: () => api.get('/themes'),
+  })
+
+  const { data: purchasedData } = useQuery<{ themeIds: string[] }>({
+    queryKey: ['purchased-themes'],
+    queryFn: () => api.get('/credits/purchased'),
+  })
+
+  const { data: credit } = useQuery<{ balance: number }>({
+    queryKey: ['credit-balance'],
+    queryFn: () => api.get('/credits/balance'),
+  })
+
+  const purchasedThemeIds = purchasedData?.themeIds || []
+
+  const purchaseMutation = useMutation({
+    mutationFn: (themeId: string) => api.post('/credits/purchase-theme', { themeId }),
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ['purchased-themes'] })
+      queryClient.invalidateQueries({ queryKey: ['credit-balance'] })
+      toast.success(`Tema ${data.theme.name} berhasil dibeli!`)
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : 'Gagal membeli tema'),
+  })
+
+  const isPurchased = (themeId: string) =>
+    purchasedThemeIds.includes(themeId) || invitation.themeId === themeId
+
+  const handleSelectTheme = async (theme: any) => {
+    if (theme.isPremium && !isPurchased(theme.id)) {
+      try {
+        const result: any = await api.post('/credits/purchase-theme', { themeId: theme.id })
+        queryClient.invalidateQueries({ queryKey: ['purchased-themes'] })
+        queryClient.invalidateQueries({ queryKey: ['credit-balance'] })
+        toast.success(`Tema ${result.theme.name} berhasil dibeli!`)
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Gagal membeli tema')
+        return
+      }
+    }
+    let colors = { primaryColor: undefined, secondaryColor: undefined, fontFamily: undefined }
+    if (theme.defaultColors) {
+      try { colors = JSON.parse(theme.defaultColors) } catch {}
+    }
+    const updateData: any = { themeId: theme.id, ...colors }
+    if (theme.fontFamily) updateData.fontFamily = theme.fontFamily
+    updateMutation.mutate(updateData)
+    setForm({ ...form, ...colors })
+  }
 
   if (isLoading) {
     return (
@@ -506,10 +559,83 @@ export function EditorPage() {
         </div>}
 
         {activeTab === 'style' && <div className="space-y-4 mt-6">
+          {/* Theme Selector */}
+          {themes && themes.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Palette className="h-4 w-4 text-primary" /> Pilih Tema
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">Pilih template tema untuk undanganmu</p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {themes.map((theme) => {
+                    const purchased = isPurchased(theme.id)
+                    const selected = invitation.themeId === theme.id
+                    const gradient = `bg-gradient-to-br ${theme.category === 'modern' ? 'from-slate-200 to-slate-100' : theme.category === 'traditional' ? 'from-rose-200 to-pink-100' : theme.category === 'elegant' ? 'from-amber-100 to-yellow-50' : theme.category === 'islamic' ? 'from-emerald-100 to-teal-50' : 'from-blue-100 to-indigo-50'}`
+                    return (
+                      <button
+                        key={theme.id}
+                        onClick={() => handleSelectTheme(theme)}
+                        disabled={purchaseMutation.isPending}
+                        className={`group relative flex flex-col items-center gap-2 rounded-xl border-2 p-3 text-center transition-all hover:shadow-md ${
+                          selected
+                            ? 'border-primary bg-primary/5 shadow-sm'
+                            : 'border-border/50 hover:border-primary/30'
+                        } ${purchaseMutation.isPending ? 'opacity-60 pointer-events-none' : ''}`}
+                      >
+                        <div className={`w-full aspect-[4/3] rounded-lg ${gradient} flex items-center justify-center relative overflow-hidden`}>
+                          <Crown className={`h-8 w-8 ${theme.isPremium ? 'text-amber-400' : 'text-white/40'}`} strokeWidth={1} />
+                          {theme.isPremium && (
+                            <span className="absolute top-1 right-1 bg-amber-400 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
+                              PRO
+                            </span>
+                          )}
+                          {selected && (
+                            <div className="absolute inset-0 bg-primary/10 flex items-center justify-center">
+                              <Check className="h-6 w-6 text-primary" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="w-full space-y-1">
+                          <p className="text-xs font-semibold truncate">{theme.name}</p>
+                          <div className="flex items-center justify-center gap-1">
+                            {theme.isPremium && !purchased ? (
+                              <span className="text-[10px] font-bold text-amber-600 flex items-center gap-0.5">
+                                <Wallet className="h-3 w-3" />
+                                {theme.price?.toLocaleString() || 50000}
+                              </span>
+                            ) : (
+                              <span className="text-[10px] text-emerald-600 font-medium">
+                                {purchased ? 'Dimiliki' : 'Gratis'}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {theme.isPremium && !purchased && (
+                          <span className="text-[10px] text-white bg-amber-500 hover:bg-amber-600 rounded-lg px-3 py-1.5 w-full font-medium flex items-center justify-center gap-1 transition-colors">
+                            <ShoppingCart className="h-3 w-3" /> Beli
+                          </span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+                {credit && (
+                  <div className="mt-3 flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-xs">
+                    <span className="text-muted-foreground">Saldo kredit kamu</span>
+                    <span className="font-semibold">{credit.balance.toLocaleString()}</span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Tema & Warna</CardTitle>
-              <p className="text-xs text-muted-foreground">Sesuaikan tampilan undangan dengan seleramu</p>
+              <CardTitle className="text-base">Sesuaikan Warna & Font</CardTitle>
+              <p className="text-xs text-muted-foreground">Atur warna dan tipografi undangan secara manual</p>
             </CardHeader>
             <CardContent className="space-y-5">
               <div className="grid grid-cols-2 gap-4">

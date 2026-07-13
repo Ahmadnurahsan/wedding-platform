@@ -17,11 +17,12 @@ model User {
   referredBy   String?      @map("referred_by") // referral code of affiliate who referred this user
   createdAt    DateTime     @default(now()) @map("created_at")
   updatedAt    DateTime     @updatedAt @map("updated_at")
-  invitations  Invitation[]
-  coupons      Coupon[]
-  credit       Credit?
-  transactions Transaction[]
-  affiliate    Affiliate?
+  invitations     Invitation[]
+  coupons         Coupon[]
+  credit          Credit?
+  transactions    Transaction[]
+  affiliate       Affiliate?
+  purchasedThemes PurchasedTheme[]
 
   @@map("users")
 }
@@ -76,8 +77,9 @@ model Theme {
   defaultColors  String?        @map("default_colors")
   isActive       Boolean        @default(true) @map("is_active")
   createdAt      DateTime       @default(now()) @map("created_at")
-  invitations    Invitation[]
-  coupons        Coupon[]
+  invitations     Invitation[]
+  coupons         Coupon[]
+  purchasedBy     PurchasedTheme[]
 
   @@map("themes")
 }
@@ -209,6 +211,19 @@ model Credit {
   user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("credits")
+}
+
+model PurchasedTheme {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  themeId   String   @map("theme_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  theme Theme @relation(fields: [themeId], references: [id])
+
+  @@unique([userId, themeId])
+  @@map("purchased_themes")
 }
 
 model Affiliate {

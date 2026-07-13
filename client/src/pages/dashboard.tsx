@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, FileText, Users, MessageCircle, Gift, Eye, TrendingUp, QrCode, Crown, ExternalLink, Heart, Sparkles, ChevronRight } from 'lucide-react'
+import { Plus, FileText, Users, MessageCircle, Gift, Eye, TrendingUp, QrCode, Crown, ExternalLink, Heart, Sparkles, ChevronRight, Wallet } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Card, CardContent } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
@@ -58,6 +58,11 @@ export function DashboardPage() {
     totalGuests: invitations?.reduce((a, i) => a + i._count.guests, 0) || 0,
     totalVisits: invitations?.reduce((a, i) => a + i.visitCount, 0) || 0,
   }
+
+  const { data: credit } = useQuery<{ balance: number }>({
+    queryKey: ['credit-balance'],
+    queryFn: () => api.get('/credits/balance'),
+  })
 
   const [selectedInv, setSelectedInv] = useState<string | null>(null)
   const { data: stats } = useQuery<Stats>({
@@ -188,6 +193,19 @@ export function DashboardPage() {
               <div>
                 <p className="text-2xl font-bold">{totalStats.totalGuests.toLocaleString()}</p>
                 <p className="text-xs text-muted-foreground">Total Tamu</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="overflow-hidden">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100">
+                <Wallet className="h-5 w-5 text-amber-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{credit?.balance?.toLocaleString() ?? '...'}</p>
+                <p className="text-xs text-muted-foreground">Saldo Kredit</p>
               </div>
             </div>
           </CardContent>

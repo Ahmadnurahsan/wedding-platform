@@ -4,7 +4,7 @@ import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card'
 import { Avatar, AvatarFallback } from '../components/ui/avatar'
-import { LogOut, Mail, Calendar, User, Phone, Save, Copy, Gift, Users, Coins, TrendingUp } from 'lucide-react'
+import { LogOut, Mail, Calendar, User, Phone, Save, Copy, Gift, Users, Coins, TrendingUp, Wallet, ArrowUpRight, ArrowDownRight, CreditCard } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { formatDate } from '../lib/utils'
 import { api } from '../lib/api'
@@ -17,6 +17,18 @@ export function ProfilePage() {
   const [name, setName] = useState(user?.name || '')
   const [phone, setPhone] = useState(user?.phone || '')
   const [saving, setSaving] = useState(false)
+
+  const { data: credit } = useQuery<{ balance: number }>({
+    queryKey: ['credit-balance'],
+    queryFn: () => api.get('/credits/balance'),
+    enabled: !!user,
+  })
+
+  const { data: transactions } = useQuery<{ transactions: any[]; total: number }>({
+    queryKey: ['credit-transactions'],
+    queryFn: () => api.get('/credits/transactions?limit=10'),
+    enabled: !!user,
+  })
 
   const { data: affiliate } = useQuery({
     queryKey: ['affiliate-me'],
@@ -117,6 +129,52 @@ export function ProfilePage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Credit Balance */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Wallet className="h-4 w-4 text-amber-600" /> Saldo Kredit
+          </CardTitle>
+          <CardDescription>Gunakan kredit untuk membeli tema premium</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/50 p-4">
+            <div>
+              <p className="text-sm text-amber-700 font-medium">Saldo Tersedia</p>
+              <p className="text-3xl font-bold text-amber-900">{credit?.balance?.toLocaleString() ?? '...'}</p>
+            </div>
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-amber-100">
+              <CreditCard className="h-7 w-7 text-amber-600" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Transaction History */}
+      {transactions?.transactions && transactions.transactions.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <ArrowUpRight className="h-4 w-4 text-muted-foreground" /> Riwayat Transaksi
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1">
+            {transactions.transactions.slice(0, 10).map((tx: any) => (
+              <div key={tx.id} className="flex items-center justify-between py-2 border-b border-border/30 last:border-0">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm truncate">{tx.description || tx.type}</p>
+                  <p className="text-xs text-muted-foreground">{new Date(tx.createdAt).toLocaleDateString('id-ID')}</p>
+                </div>
+                <div className={`flex items-center gap-1 shrink-0 ml-2 font-semibold ${tx.amount > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                  {tx.amount > 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                  {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString()}
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Affiliate / Referral Program */}
       <Card>

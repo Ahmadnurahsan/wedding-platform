@@ -1,4 +1,4 @@
-import { Heart, Sparkles, Flower2, Moon, Loader2 } from 'lucide-react'
+import { Heart, Sparkles, Flower2, Moon, Loader2, Wallet } from 'lucide-react'
 import { Card, CardContent } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
@@ -12,6 +12,7 @@ interface Theme {
   category: string
   thumbnailUrl: string | null
   isPremium: boolean
+  price: number
   defaultColors: string | null
 }
 
@@ -72,6 +73,12 @@ export function TemplatesPage() {
               <CardContent className="p-3.5">
                 <h3 className="text-sm font-semibold">{t.name}</h3>
                 <p className="mt-0.5 text-xs text-muted-foreground">{t.category}</p>
+                {t.isPremium && (
+                  <div className="mt-1 flex items-center justify-center gap-1 text-[10px] text-amber-600 font-medium">
+                    <Wallet className="h-3 w-3" />
+                    {t.price?.toLocaleString() || '50.000'} kredit
+                  </div>
+                )}
                 <div className="mt-3 flex gap-2">
                   <Button
                     size="sm"

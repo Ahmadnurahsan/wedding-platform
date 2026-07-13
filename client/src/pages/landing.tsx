@@ -493,6 +493,11 @@ export function LandingPage() {
                             PREMIUM
                           </Badge>
                         )}
+                        {t.isPremium && t.price && (
+                          <div className="absolute left-2 bottom-2 bg-black/60 backdrop-blur-sm text-white text-[9px] font-bold px-2 py-1 rounded-full">
+                            {t.price.toLocaleString()} kredit
+                          </div>
+                        )}
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
                           <Link to={`/template-demo/${t.id}`} className="opacity-0 group-hover:opacity-100 transition-opacity">
                             <Button size="sm" variant="secondary" className="shadow-lg text-xs">

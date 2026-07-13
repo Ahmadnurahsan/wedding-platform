@@ -17,6 +17,19 @@ creditRouter.get('/balance', async (req: AuthRequest, res: Response) => {
   }
 });
 
+// Get my purchased themes
+creditRouter.get('/purchased', async (req: AuthRequest, res: Response) => {
+  try {
+    const purchased = await prisma.purchasedTheme.findMany({
+      where: { userId: req.userId! },
+      select: { themeId: true },
+    });
+    return res.json({ themeIds: purchased.map(p => p.themeId) });
+  } catch {
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Get my transactions
 creditRouter.get('/transactions', async (req: AuthRequest, res: Response) => {
   try {
@@ -92,6 +105,11 @@ creditRouter.post('/purchase-theme', async (req: AuthRequest, res: Response) => 
           description: `Pembelian tema: ${theme.name}`,
           referenceId: themeId,
         },
+      }),
+      prisma.purchasedTheme.upsert({
+        where: { userId_themeId: { userId: req.userId!, themeId } },
+        update: {},
+        create: { userId: req.userId!, themeId },
       }),
     ]);
 
