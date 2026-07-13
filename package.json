@@ -11,7 +11,10 @@
   },
   "scripts": {
     "dev": "concurrently -n client,server -c cyan,green \"pnpm --filter client dev\" \"pnpm --filter server dev\"",
-    "build": "pnpm --filter client build && pnpm --filter server build",
+    "build": "pnpm --filter client build && pnpm --filter server build && pnpm notify",
+    "build:client": "pnpm --filter client build && pnpm notify",
+    "build:server": "pnpm --filter server build && pnpm notify",
+    "notify": "node -e \"const { execSync } = require('child_process'); const sounds = ['Hero','Ping','Pop','Tink']; execSync('afplay /System/Library/Sounds/' + sounds[Math.floor(Math.random()*sounds.length)] + '.aiff', { stdio: 'ignore' });\"",
     "lint": "pnpm --filter client lint && pnpm --filter server lint"
   },
   "dependencies": {
