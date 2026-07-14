@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Heart, MapPin, Calendar, Clock, Music, Send, Gift, ChevronDown, Check, CornerDownLeft, Languages, Menu, X, Globe, Maximize, Minimize, Volume2, VolumeX, ExternalLink, Copy, Camera } from 'lucide-react'
+import { Heart, Calendar, Send, Gift, ChevronDown, Check, CornerDownLeft, Languages, Menu, X, Globe, Maximize, Minimize, Volume2, VolumeX, ExternalLink, Copy, Camera } from 'lucide-react'
 import { Input } from '../components/ui/input'
 import { Textarea } from '../components/ui/textarea'
-import { t, type Language, languageNames, languageFlags } from '../lib/invitation-i18n'
+import { type Language, languageNames, languageFlags } from '../lib/invitation-i18n'
 import { useGoogleFonts } from '../hooks/useGoogleFonts'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -211,7 +211,7 @@ export function NoirTheme({ data, slug, lang, setLang, guestName, guestCode }: N
           )}
           {guestName && <p className="text-base opacity-70 font-bold">Kepada Yth. <br /><span className="font-semibold text-xl">{guestName}</span></p>}
           <button onClick={() => { setCoverOpened(true); setMusicPlaying(true); setTimeout(() => audioRef.current?.play().catch(() => {}), 500) }}
-            className="inline-flex items-center gap-3 border border-white/30 px-12 py-5 text-base font-bold tracking-widest bg-white/10 backdrop-blur-md hover:bg-white/20 transition-all">
+            className="inline-flex items-center gap-3 border border-white/30 px-12 py-5 text-base font-bold tracking-widest bg-white/10 backdrop-blur-md hover:bg-white/20 transition-all rounded-lg">
             BUKA UNDANGAN
           </button>
         </div>
@@ -245,7 +245,7 @@ export function NoirTheme({ data, slug, lang, setLang, guestName, guestCode }: N
       <div className={`fixed top-0 left-0 right-0 z-40 transition-all duration-500 bg-black/80 backdrop-blur-xl ${scrolled ? 'translate-y-0' : '-translate-y-full'}`}>
         <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
           <p className="text-lg font-bold tracking-wide truncate">{data.groomNickname || data.groomName} & {data.brideNickname || data.brideName}</p>
-          <button onClick={() => setMenuOpen(true)} className="p-2 hover:bg-white/10 transition-all"><Menu className="h-6 w-6" /></button>
+          <button onClick={() => setMenuOpen(true)} className="p-2 hover:bg-white/10 transition-all rounded-lg"><Menu className="h-6 w-6" /></button>
         </div>
       </div>
 
@@ -257,12 +257,12 @@ export function NoirTheme({ data, slug, lang, setLang, guestName, guestCode }: N
             <div className="p-8">
               <div className="flex justify-between items-center mb-10">
                 <p className="font-extrabold text-lg tracking-wider uppercase opacity-50">Menu</p>
-                <button onClick={() => setMenuOpen(false)} className="p-2 hover:bg-white/10"><X className="h-5 w-5" /></button>
+                <button onClick={() => setMenuOpen(false)} className="p-2 hover:bg-white/10 rounded-lg"><X className="h-5 w-5" /></button>
               </div>
               <nav className="space-y-2">
                 {menuItems.map((item) => (
                   <button key={item.id} onClick={() => scrollTo(item.id)}
-                    className="w-full text-left px-5 py-4 text-lg font-bold hover:bg-white/10 transition-all">{item.label}</button>
+                    className="w-full text-left px-5 py-4 text-lg font-bold hover:bg-white/10 transition-all rounded-lg">{item.label}</button>
                 ))}
               </nav>
             </div>
@@ -512,7 +512,7 @@ export function NoirTheme({ data, slug, lang, setLang, guestName, guestCode }: N
               <div className="flex gap-3">
                 {['Hadir', 'Tidak Hadir'].map((label) => (
                   <button key={label} onClick={() => setRsvpStatus(label === 'Hadir' ? 'attending' : 'not_attending')}
-                    className={`flex-1 py-4 text-base font-extrabold tracking-wider uppercase transition-all ${rsvpStatus === (label === 'Hadir' ? 'attending' : 'not_attending') ? 'bg-white text-black' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}>
+                    className={`flex-1 py-4 text-base font-extrabold tracking-wider uppercase transition-all rounded-lg ${rsvpStatus === (label === 'Hadir' ? 'attending' : 'not_attending') ? 'bg-white text-black' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}>
                     {label}
                   </button>
                 ))}
@@ -523,7 +523,7 @@ export function NoirTheme({ data, slug, lang, setLang, guestName, guestCode }: N
                   <div className="flex gap-3 mt-2">
                     {[1, 2, 3, 4, 5].map((n) => (
                       <button key={n} onClick={() => setRsvpCount(n)}
-                        className={`w-14 h-14 text-lg font-extrabold transition-all ${rsvpCount === n ? 'bg-white text-black' : 'bg-white/5 text-white/60'}`}>
+                        className={`w-14 h-14 text-lg font-extrabold transition-all rounded-lg ${rsvpCount === n ? 'bg-white text-black' : 'bg-white/5 text-white/60'}`}>
                         {n}
                       </button>
                     ))}
@@ -533,7 +533,7 @@ export function NoirTheme({ data, slug, lang, setLang, guestName, guestCode }: N
               <Textarea placeholder="Tulis ucapan & doa..." value={rsvpNote} onChange={(e) => setRsvpNote(e.target.value)}
                 className="bg-white/5 text-white text-lg rounded-lg placeholder:text-white/30 font-bold border-0" />
               <button onClick={handleRsvp}
-                className="w-full py-5 text-base font-extrabold tracking-wider uppercase bg-white text-black hover:bg-white/90 transition-all">
+                className="w-full py-5 text-base font-extrabold tracking-wider uppercase bg-white text-black hover:bg-white/90 transition-all rounded-lg">
                 <Send className="inline h-5 w-5 mr-3" /> Kirim Konfirmasi
               </button>
             </div>
@@ -556,7 +556,7 @@ export function NoirTheme({ data, slug, lang, setLang, guestName, guestCode }: N
               <Textarea placeholder="Tulis ucapan & doa..." value={wishMessage} onChange={(e) => setWishMessage(e.target.value)}
                 className="bg-white/5 text-white text-lg rounded-lg placeholder:text-white/30 font-bold border-0" />
               <button onClick={handleWish}
-                className="w-full py-4 text-base font-extrabold tracking-wider uppercase bg-white/10 text-white/80 hover:bg-white/20 transition-all">
+                className="w-full py-4 text-base font-extrabold tracking-wider uppercase bg-white/10 text-white/80 hover:bg-white/20 transition-all rounded-lg">
                 <Send className="inline h-5 w-5 mr-3" /> Kirim Ucapan
               </button>
             </div>
@@ -602,7 +602,7 @@ export function NoirTheme({ data, slug, lang, setLang, guestName, guestCode }: N
           <div className="flex justify-center gap-3 mt-10">
             {['envelope' as const, 'registry' as const].map((tab) => (
               <button key={tab} onClick={() => setGiftTab(tab)}
-                className={`px-8 py-4 text-base font-extrabold tracking-wider uppercase transition-all ${giftTab === tab ? 'bg-white text-black' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}>
+                className={`px-8 py-4 text-base font-extrabold tracking-wider uppercase transition-all rounded-lg ${giftTab === tab ? 'bg-white text-black' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}>
                 {tab === 'envelope' ? 'E-Amplop' : 'Gift Registry'}
               </button>
             ))}
@@ -622,7 +622,7 @@ export function NoirTheme({ data, slug, lang, setLang, guestName, guestCode }: N
                     <p className="text-base opacity-30 font-bold">a.n. {item.name}</p>
                   </div>
                   <button onClick={() => navigator.clipboard.writeText(`${item.bank} - ${item.number} a.n. ${item.name}`)}
-                    className="p-3 bg-white/5 hover:bg-white/10 transition-all">
+                    className="p-3 bg-white/5 hover:bg-white/10 transition-all rounded-lg">
                     <Copy className="h-5 w-5" />
                   </button>
                 </div>
@@ -634,7 +634,7 @@ export function NoirTheme({ data, slug, lang, setLang, guestName, guestCode }: N
               <p className="mt-6 text-xl font-extrabold">Konfirmasi Hadiah</p>
               <p className="mt-2 text-base opacity-30 font-bold">Konfirmasi hadiah melalui WhatsApp</p>
               <button onClick={() => window.open(`https://wa.me/?text=Halo%20saya%20ingin%20memberikan%20kado%20untuk%20pernikahan%20${data.groomName}%20%26%20${data.brideName}`, '_blank')}
-                className="mt-8 inline-flex items-center gap-3 border border-white/20 px-8 py-4 text-base font-extrabold tracking-wider uppercase hover:bg-white hover:text-black transition-all">
+                className="mt-8 inline-flex items-center gap-3 border border-white/20 px-8 py-4 text-base font-extrabold tracking-wider uppercase hover:bg-white hover:text-black transition-all rounded-lg">
                 <ExternalLink className="h-5 w-5" /> Konfirmasi Via WA
               </button>
             </div>
