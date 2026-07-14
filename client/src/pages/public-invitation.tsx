@@ -6,40 +6,9 @@ import { Input } from '../components/ui/input'
 import { Textarea } from '../components/ui/textarea'
 import { api } from '../lib/api'
 import { toast } from 'sonner'
-import { t, type Language, languageNames, languageFlags } from '../lib/invitation-i18n'
+import { t, languageNames, languageFlags } from '../lib/invitation-i18n'
 import { useGoogleFonts } from '../hooks/useGoogleFonts'
-import { DanilaTheme } from '../themes/danila'
-
-interface ThemeData {
-  id: string
-  name: string
-  category: string
-  isPremium: boolean
-  defaultColors: string | null
-  sectionsConfig: string | null
-}
-
-interface InvitationData {
-  id: string
-  slug: string
-  title: string | null
-  groomName: string | null
-  groomNickname: string | null
-  groomParent: string | null
-  brideName: string | null
-  brideNickname: string | null
-  brideParent: string | null
-  primaryColor: string
-  secondaryColor: string
-  fontFamily: string
-  backgroundMusic: string | null
-  coverEnabled: boolean
-  coverMessage: string | null
-  events: { id: string; title: string; date: string | null; timeStart: string | null; timeEnd: string | null; locationName: string | null; address: string | null; mapsUrl: string | null }[]
-  media: { id: string; type: string; url: string; caption: string | null }[]
-  wishes: { id: string; name: string; message: string; reply: string | null; likes: number; createdAt: string }[]
-  theme?: ThemeData | null
-}
+import { getThemeComponent, type InvitationData, type Language } from '../themes'
 
 function Countdown({ targetDate }: { targetDate: string }) {
   const [remaining, setRemaining] = useState('')
@@ -223,17 +192,20 @@ export function PublicInvitationPage() {
   const fontFamily = data.fontFamily
 
   // Render theme-specific layouts
-  if (data.theme?.name === 'Danila Redesign') {
-    return (
-      <DanilaTheme
-        data={data as any}
-        slug={slug!}
-        lang={lang}
-        setLang={setLang}
-        guestName={guestName}
-        guestCode={guestCode}
-      />
-    )
+  if (data.theme?.name) {
+    const ThemeComponent = getThemeComponent(data.theme.name)
+    if (ThemeComponent) {
+      return (
+        <ThemeComponent
+          data={data as any}
+          slug={slug!}
+          lang={lang}
+          setLang={setLang}
+          guestName={guestName}
+          guestCode={guestCode}
+        />
+      )
+    }
   }
 
   return (

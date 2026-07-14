@@ -18,6 +18,7 @@
     "lint": "pnpm --filter client lint && pnpm --filter server lint"
   },
   "dependencies": {
+    "@rolldown/binding-win32-x64-msvc": "1.1.5",
     "concurrently": "^10.0.3"
   }
 }

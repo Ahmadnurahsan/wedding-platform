@@ -44,10 +44,27 @@ async function main() {
   { name: 'Woodland Dream', category: 'Rustic', thumbnailUrl: null, isPremium: false, sectionsConfig: JSON.stringify(['hero', 'couple', 'events', 'gallery', 'rsvp', 'wishes', 'gift', 'footer']), defaultColors: JSON.stringify({ primaryColor: '#5D4037', secondaryColor: '#EFEBE9' }) },
   { name: 'Diamond Edition', category: 'Elegan', thumbnailUrl: null, isPremium: true, sectionsConfig: JSON.stringify(['hero', 'couple', 'events', 'gallery', 'rsvp', 'maps', 'wishes', 'gift', 'footer']), defaultColors: JSON.stringify({ primaryColor: '#455A64', secondaryColor: '#ECEFF1' }) },
   { name: 'Danila Redesign', category: 'Premium', thumbnailUrl: null, isPremium: false, sectionsConfig: JSON.stringify(['cover', 'hero', 'couple', 'countdown', 'event', 'dresscode', 'livestream', 'video', 'gallery', 'quote', 'rsvp', 'wishes', 'gift', 'closing', 'footer']), defaultColors: JSON.stringify({ primaryColor: '#000000', secondaryColor: '#FAFAFA' }) },
+  { name: 'Noir', category: 'Premium', thumbnailUrl: null, isPremium: false, sectionsConfig: JSON.stringify(['cover', 'hero', 'couple', 'countdown', 'event', 'dresscode', 'gallery', 'quote', 'rsvp', 'wishes', 'gift', 'closing', 'footer']), defaultColors: JSON.stringify({ primaryColor: '#ffffff', secondaryColor: '#0a0a0a' }) },
 ]
 
+  // Clean duplicates: keep only the latest per name
+  const all = await prisma.theme.findMany({ orderBy: { createdAt: 'desc' } })
+  const seen = new Set<string>()
+  for (const t of all) {
+    if (seen.has(t.name)) {
+      await prisma.theme.delete({ where: { id: t.id } })
+    } else {
+      seen.add(t.name)
+    }
+  }
+
   for (const theme of themes) {
-    await prisma.theme.create({ data: theme })
+    const existing = await prisma.theme.findFirst({ where: { name: theme.name } })
+    if (existing) {
+      await prisma.theme.update({ where: { id: existing.id }, data: theme })
+    } else {
+      await prisma.theme.create({ data: theme })
+    }
   }
   console.log(`✅ Seeded ${themes.length} themes`)
 }
