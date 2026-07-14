@@ -2,6 +2,7 @@ import { useParams, Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { Heart, MapPin, Calendar, Clock, Gift, ChevronDown, ArrowLeft, Loader2, Music, Play, ImageIcon, Minus, CheckSquare } from 'lucide-react'
 import { api } from '../lib/api'
+import { DanilaTheme } from '../themes/danila'
 
 interface ThemeComponent {
   id: string
@@ -249,6 +250,29 @@ export function TemplateDemoPage() {
 
   const primary = colors.primaryColor || '#D4A574'
   const secondary = colors.secondaryColor || '#F5E6D3'
+
+  if (theme.name === 'Danila Redesign') {
+    const mockData = {
+      id: theme.id, slug: 'demo-danila', title: 'Demo Undangan',
+      groomName: 'Andi Pratama', groomNickname: 'Andi', groomParent: 'Putra dari Bpk. Ahmad & Ibu Siti',
+      brideName: 'Siti Nurhaliza', brideNickname: 'Siti', brideParent: 'Putri dari Bpk. Budi & Ibu Dewi',
+      primaryColor: primary, secondaryColor: secondary, fontFamily: "'Poppins', sans-serif",
+      backgroundMusic: null, coverEnabled: true, coverMessage: 'Kepada Yth.',
+      events: [{ id: '1', title: 'Akad & Resepsi', date: '2026-08-17', timeStart: '08:00', timeEnd: '14:00', locationName: 'Hotel Tentrem Yogyakarta', address: 'Jl. Pangeran Mangkubumi No. 72', mapsUrl: 'https://maps.google.com' }],
+      media: [], wishes: [],
+    }
+    return (
+      <div className="relative">
+        <Link to="/templates" className="fixed top-4 left-4 z-[100] flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-xs font-medium shadow-sm backdrop-blur" style={{ color: '#000' }}>
+          <ArrowLeft className="h-3.5 w-3.5" /> Kembali
+        </Link>
+        <div className="fixed top-4 right-4 z-[100] flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-xs font-medium shadow-sm backdrop-blur" style={{ color: '#000' }}>
+          {theme.name}
+        </div>
+        <DanilaTheme data={mockData} slug="demo-danila" lang="id" setLang={() => {}} guestName={null} guestCode={null} />
+      </div>
+    )
+  }
 
   let components: ThemeComponent[] = []
   try { components = JSON.parse(theme.sectionsConfig || '[]') } catch {}
