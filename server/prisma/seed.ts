@@ -43,7 +43,7 @@ async function main() {
   { name: 'Navy & Gold', category: 'Elegan', thumbnailUrl: null, isPremium: true, sectionsConfig: JSON.stringify(['hero', 'couple', 'events', 'gallery', 'rsvp', 'maps', 'wishes', 'gift', 'footer']), defaultColors: JSON.stringify({ primaryColor: '#1A237E', secondaryColor: '#E8EAF6' }) },
   { name: 'Woodland Dream', category: 'Rustic', thumbnailUrl: null, isPremium: false, sectionsConfig: JSON.stringify(['hero', 'couple', 'events', 'gallery', 'rsvp', 'wishes', 'gift', 'footer']), defaultColors: JSON.stringify({ primaryColor: '#5D4037', secondaryColor: '#EFEBE9' }) },
   { name: 'Diamond Edition', category: 'Elegan', thumbnailUrl: null, isPremium: true, sectionsConfig: JSON.stringify(['hero', 'couple', 'events', 'gallery', 'rsvp', 'maps', 'wishes', 'gift', 'footer']), defaultColors: JSON.stringify({ primaryColor: '#455A64', secondaryColor: '#ECEFF1' }) },
-  { name: 'Danila Redesign', category: 'Premium', thumbnailUrl: null, isPremium: true, price: 75000, sectionsConfig: JSON.stringify(['cover', 'hero', 'couple', 'countdown', 'event', 'dresscode', 'livestream', 'video', 'gallery', 'quote', 'rsvp', 'wishes', 'gift', 'closing', 'footer']), defaultColors: JSON.stringify({ primaryColor: '#8B6914', secondaryColor: '#FAF7F2' }) },
+  { name: 'Danila Redesign', category: 'Premium', thumbnailUrl: null, isPremium: false, sectionsConfig: JSON.stringify(['cover', 'hero', 'couple', 'countdown', 'event', 'dresscode', 'livestream', 'video', 'gallery', 'quote', 'rsvp', 'wishes', 'gift', 'closing', 'footer']), defaultColors: JSON.stringify({ primaryColor: '#000000', secondaryColor: '#FAFAFA' }) },
 ]
 
   for (const theme of themes) {
