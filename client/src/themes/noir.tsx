@@ -116,9 +116,12 @@ export function NoirTheme({ data, slug, lang, setLang, guestName, guestCode }: N
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  // GSAP Animations — smooth with longer duration
+  const rightPanelRef = useRef<HTMLDivElement>(null)
+
+  // GSAP scope — use right panel as scroller on desktop
   useEffect(() => {
     if (coverOpened) {
+      const scroller = rightPanelRef.current || undefined
       const ctx = gsap.context(() => {
         sectionsRef.current.forEach((el) => {
           if (!el) return
@@ -131,6 +134,7 @@ export function NoirTheme({ data, slug, lang, setLang, guestName, guestCode }: N
               scrollTrigger: {
                 trigger: el,
                 start: 'top 88%',
+                scroller,
                 toggleActions: 'play none none none',
               },
             }
@@ -140,6 +144,15 @@ export function NoirTheme({ data, slug, lang, setLang, guestName, guestCode }: N
       return () => ctx.revert()
     }
   }, [coverOpened])
+
+  // Scroll handler — listen to right panel on desktop, window on mobile
+  useEffect(() => {
+    const el = rightPanelRef.current
+    if (!el) return
+    const onScroll = () => setScrolled(el.scrollTop > 80)
+    el.addEventListener('scroll', onScroll)
+    return () => el.removeEventListener('scroll', onScroll)
+  }, [])
 
   const setSectionRef = useCallback((el: HTMLElement | null) => {
     if (el && !sectionsRef.current.includes(el)) {
@@ -216,44 +229,6 @@ export function NoirTheme({ data, slug, lang, setLang, guestName, guestCode }: N
       </div>
     )
   }
-
-  const rightPanelRef = useRef<HTMLDivElement>(null)
-
-  // GSAP scope — use right panel as scroller on desktop
-  useEffect(() => {
-    if (coverOpened) {
-      const scroller = rightPanelRef.current || undefined
-      const ctx = gsap.context(() => {
-        sectionsRef.current.forEach((el) => {
-          if (!el) return
-          gsap.fromTo(el,
-            { opacity: 0, y: 80 },
-            {
-              opacity: 1, y: 0,
-              duration: 1.4,
-              ease: 'power2.out',
-              scrollTrigger: {
-                trigger: el,
-                start: 'top 88%',
-                scroller,
-                toggleActions: 'play none none none',
-              },
-            }
-          )
-        })
-      }, mainRef)
-      return () => ctx.revert()
-    }
-  }, [coverOpened])
-
-  // Scroll handler — listen to right panel on desktop, window on mobile
-  useEffect(() => {
-    const el = rightPanelRef.current
-    if (!el) return
-    const onScroll = () => setScrolled(el.scrollTop > 80)
-    el.addEventListener('scroll', onScroll)
-    return () => el.removeEventListener('scroll', onScroll)
-  }, [])
 
   const scrollToSection = (id: string) => {
     setMenuOpen(false)
